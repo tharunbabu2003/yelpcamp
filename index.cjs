@@ -81,6 +81,6 @@ app.delete("/campgrounds/:id" , async(req,res)=>{
 
 // Delete campground ends //
 
-app.listen(3000 , ()=>{
-    console.log("port : 3000");
+app.listen(3001 , ()=>{
+    console.log("port : 3001");
 })
