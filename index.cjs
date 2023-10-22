@@ -7,8 +7,22 @@ const ejsMate = require('ejs-mate');
 const Campground = require('./models/campground.cjs');
 const wrapAsync = require('./utils/catchAsync.js')
 const expressError = require('./utils/expressError.js')
+const Joi = require('joi')
+const {campgroundSchema} = require('./schemas.js')
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelpcamp');
+
+
+const validateCampground = (req , res , next) =>{
+    const { error }= campgroundSchema.validate(req.body)
+    if(error){
+        const msg = error.details.map(el => el.message).join(',')
+        throw new expressError(msg , 400)
+    }
+    else{
+        next()
+    }
+}
 
 app.engine('ejs' , ejsMate)
 app.set('view engine' , 'ejs');
@@ -38,7 +52,7 @@ app.get("/campgrounds/new" , (req,res)=>{
     res.render("campgrounds/new")
 })
 
-app.post("/campgrounds" , wrapAsync(async(req,res , next)=>{
+app.post("/campgrounds" , validateCampground , wrapAsync(async(req,res , next)=>{
     const newCampground = new Campground(req.body.campground);
     await newCampground.save();
     res.redirect(`/campgrounds/${newCampground._id}`)
@@ -64,7 +78,7 @@ app.get("/campgrounds/:id/edit" , wrapAsync(async(req,res , next)=>{
     res.render('campgrounds/edit' , { campground })
 }))
 
-app.put("/campgrounds/:id" , wrapAsync(async(req,res , next)=>{
+app.put("/campgrounds/:id" ,validateCampground , wrapAsync(async(req,res , next)=>{
     const {id} = req.params;
     const campground = await Campground.findByIdAndUpdate(id , { ...req.body.campground })
     res.redirect(`/campgrounds/${campground._id}`)
